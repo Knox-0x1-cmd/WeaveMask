@@ -87,11 +87,29 @@ public class DownloadActivity extends Activity {
 
     private void error(Throwable e) {
         Log.e(getClass().getSimpleName(), Log.getStackTraceString(e));
-        finish();
+        showErrorAndFinish(null, e);
+    }
+
+    private void showErrorAndFinish(String url, Throwable e) {
+        var msg = "Download failed";
+        if (url != null) msg += "\n" + url;
+        if (e != null && e.getMessage() != null) msg += "\n" + e.getMessage();
+        msg += "\nSideload the full WeaveMask APK manually.";
+        try {
+            new AlertDialog.Builder(this)
+                    .setCancelable(false)
+                    .setTitle(APP_NAME)
+                    .setMessage(msg)
+                    .setNegativeButton(ok, (d, w) -> finish())
+                    .show();
+        } catch (Exception showFailed) {
+            Log.e(getClass().getSimpleName(), Log.getStackTraceString(showFailed));
+            finish();
+        }
     }
 
     private Request request(String url) {
-        return Networking.get(url).setErrorHandler((conn, e) -> error(e));
+        return Networking.get(url).setErrorHandler((conn, e) -> showErrorAndFinish(url, e));
     }
 
     private void showDialog() {
@@ -121,8 +139,10 @@ public class DownloadActivity extends Activity {
                 try (input; var out = session.openStream(this)) {
                     if (out != null)
                         APKInstall.transfer(input, out);
+                    else
+                        showErrorAndFinish(BuildConfig.APK_URL, null);
                 } catch (IOException e) {
-                    error(e);
+                    showErrorAndFinish(BuildConfig.APK_URL, e);
                 }
                 Intent intent = session.waitIntent();
                 if (intent != null)
