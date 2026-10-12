@@ -18,6 +18,18 @@ android {
     val url = base + "v${Config.version}/app-release.apk"
     val canaryUrl = base + "canary-${Config.versionCode}/"
 
+    // Warn at configuration time when APK_URL cannot resolve to a
+    // real GitHub release (SHA/null/canary builds). Hidden-app
+    // restore via DownloadActivity will 404 in that case; build
+    // with version=X.Y.Z matching a published release instead.
+    if (canary) {
+        logger.warn(
+            "WeaveMask stub APK_URL is canary (${canaryUrl}app-*.apk) " +
+                "because version='${Config.version}' has no '.'. " +
+                "Hide/restore will 404 unless that release exists."
+        )
+    }
+
     defaultConfig {
         applicationId = "io.github.seyud.weave"
         versionCode = 1
