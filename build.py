@@ -549,23 +549,54 @@ def cargo_cli():
 def setup_ndk():
     url = f"https://github.com/topjohnwu/ondk/releases/download/{ondk_version}/ondk-{ondk_version}-{os_name}.tar.xz"
     ndk_archive = url.split("/")[-1]
-    ondk_path = paths().ndk.parent / f"ondk-{ondk_version}"
+    ndk_parent = paths().ndk.parent
+    ondk_path = ndk_parent / f"ondk-{ondk_version}"
 
     header(f"* Downloading and extracting {ndk_archive}")
     rm_rf(ondk_path)
+    # Download to a temp file first (not streaming): random-access
+    # tar can verify members, retry, and we can list top-level
+    # on failure. Streaming r|xz + filter silently drops
+    # members on some Python/xz combos, which produced an
+    # empty extract and the mv Errno 2 seen in CI.
+    import tempfile
+
+    tmp = None
     try:
-        with urllib.request.urlopen(url, timeout=60) as response:
-            with tarfile.open(mode="r|xz", fileobj=response) as tar:
-                if hasattr(tarfile, "data_filter"):
-                    tar.extractall(paths().ndk.parent, filter="data")
-                else:
-                    error("Python 3.12+ required for safe NDK extraction (tar data filter)")
+        with tempfile.NamedTemporaryFile(suffix=".tar.xz", delete=False) as f:
+            tmp = Path(f.name)
+        req = urllib.request.Request(url, headers={"Accept": "application/octet-stream"})
+        with urllib.request.urlopen(req, timeout=60) as response, open(tmp, "wb") as out:
+            shutil.copyfileobj(response, out, length=1024 * 1024)
+        if tmp.stat().st_size < 1024 * 1024:
+            error(f"NDK download too small ({tmp.stat().st_size} bytes): {url}")
+        with tarfile.open(tmp, mode="r:xz") as tar:
+            if hasattr(tarfile, "data_filter"):
+                tar.extractall(ndk_parent, filter="tar")
+            else:
+                tar.extractall(ndk_parent)
     except Exception as e:
         rm_rf(ondk_path)
+        if tmp is not None:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
         error(f"NDK download/extract failed ({url}): {e}")
+    try:
+        os.remove(tmp)
+    except OSError:
+        pass
 
-    rm_rf(paths().ndk)
-    mv(ondk_path, paths().ndk)
+    if not ondk_path.is_dir():
+        try:
+            listing = sorted(p.name for p in ndk_parent.iterdir())
+        except OSError as e:
+            listing = [f"<list failed: {e}>"]
+        error(
+            f"NDK extract produced no {ondk_path.name} dir. "
+            f"Parent {ndk_parent} contains: {listing[:20]}"
+        )
 
     rm_rf(paths().ndk)
     mv(ondk_path, paths().ndk)
