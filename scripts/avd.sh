@@ -97,7 +97,7 @@ parse_args() {
     esac
   done
 
-  if [ -z $ver ]; then
+  if [ -z "$ver" ]; then
     print_error "! No system image version specified"
     exit 1
   fi
@@ -119,7 +119,7 @@ parse_args() {
   esac
 
   # Determine default image type
-  if [ -z $type ]; then
+  if [ -z "$type" ]; then
     if [ $(bc <<< "$api >= $atd_min_api && $api <= $atd_max_api") = 1 ]; then
       # Use the lightweight ATD images if possible
       type='aosp_atd'
@@ -168,8 +168,8 @@ dl_emu() {
 setup_emu() {
   local avd_pkg=$1
   local ver=$2
-  dl_emu $avd_pkg
-  echo no | "$avd" create avd -f -n test -k $avd_pkg
+  dl_emu "$avd_pkg"
+  echo no | "$avd" create avd -f -n test -k "$avd_pkg"
 }
 
 test_emu() {
@@ -184,12 +184,12 @@ test_emu() {
   else
     "$emu" @test $emu_args $magisk_args > /dev/null 2>&1 &
   fi
-  timeout $boot_timeout bash -c wait_for_boot
+  timeout "$boot_timeout" bash -c wait_for_boot
 
-  run_setup $apk
+  run_setup "$apk"
 
   adb reboot
-  timeout $boot_timeout bash -c wait_for_boot
+  timeout "$boot_timeout" bash -c wait_for_boot
 
   run_tests
 
@@ -204,14 +204,15 @@ test_main() {
 
   # Shift off the options we just parsed so that "$@" only contains the remaining positional arguments
   shift $((OPTIND - 1))
-  local apks=($(print_apks "$@"))
+  local -a apks
+  mapfile -t apks < <(print_apks "$@")
 
   # Specify an explicit port so that tests can run with other emulators running at the same time
   local emu_port=5682
   emu_args="$emu_args -port $emu_port"
   export ANDROID_SERIAL="emulator-$emu_port"
 
-  setup_emu "$avd_pkg" $ver
+  setup_emu "$avd_pkg" "$ver"
 
   # Restart ADB daemon just in case
   adb kill-server
@@ -220,12 +221,12 @@ test_main() {
   # Launch stock emulator
   print_title "* Launching $avd_pkg"
   "$emu" @test $emu_args > /dev/null 2>&1 &
-  timeout $boot_timeout bash -c wait_for_boot
+  timeout "$boot_timeout" bash -c wait_for_boot
 
   # Patch images
   local images=()
   for apk in "${apks[@]}"; do
-    images+=("magisk-$(basename $apk .apk).img")
+    images+=("magisk-$(basename "$apk" .apk).img")
     ./build.py -v avd_patch --apk "$apk" "$ramdisk" "${images[-1]}"
   done
 
@@ -233,8 +234,8 @@ test_main() {
   wait
 
   for i in "${!apks[@]}"; do
-    print_title "* Testing $avd_pkg ($(basename ${apks[i]}))"
-    test_emu ${apks[i]} ${images[i]}
+    print_title "* Testing $avd_pkg ($(basename "${apks[i]}"))"
+    test_emu "${apks[i]}" "${images[i]}"
   done
 
   cleanup
@@ -245,7 +246,7 @@ run_main() {
   vars=$(parse_args "ver avd_pkg" "$@")
   eval "$vars"
 
-  setup_emu "$avd_pkg" $ver
+  setup_emu "$avd_pkg" "$ver"
   print_title "* Launching $avd_pkg"
   "$emu" @test $emu_args > /dev/null 2>&1 &
   wait_for_boot
@@ -262,7 +263,8 @@ dl_main() {
 }
 
 live_test_main() {
-  local apks=($(print_apks "$@"))
+  local -a apks
+  mapfile -t apks < <(print_apks "$@")
   for apk in "${apks[@]}"; do
     # Cleanup
     adb shell pm uninstall io.github.seyud.weave || true
@@ -270,14 +272,14 @@ live_test_main() {
     adb shell /system/xbin/su 0 rm -rf /data/adb/modules
 
     # "Install" Magisk
-    ./build.py -v emulator $apk
-    timeout $boot_timeout bash -c wait_for_boot
+    ./build.py -v emulator "$apk"
+    timeout "$boot_timeout" bash -c wait_for_boot
 
-    run_setup $apk
+    run_setup "$apk"
 
     # Trigger Magisk soft reboot
-    ./build.py -v emulator $apk
-    timeout $boot_timeout bash -c wait_for_boot
+    ./build.py -v emulator "$apk"
+    timeout "$boot_timeout" bash -c wait_for_boot
 
     run_tests
   done

@@ -21,22 +21,22 @@
 - Set environment variable `ANDROID_HOME` to the Android SDK folder. This path can be found in Android Studio settings.
 - Setup JDK:
   - The recommended option is to set environment variable `ANDROID_STUDIO` to the path where your Android Studio is installed. The build script will automatically find and use the bundled JDK.
-  - You can also setup JDK 17 yourself, but this guide will not cover the instructions.
-- Clone sources: `git clone --recurse-submodules https://github.com/topjohnwu/Magisk.git`
+  - You can also setup JDK 21 yourself, but this guide will not cover the instructions.
+- Clone sources: `git clone --recurse-submodules https://github.com/Seyud/WeaveMask.git`
 - Run `./build.py ndk` to let the script download and install NDK for you
 
 ## Building
 
 - To build everything and create the final Magisk APK, run `./build.py all`.
 - You can also build specific sub-components; call `build.py` to see your options. \
-  For each action, use `-h` to access help (e.g. `./build.py binary -h`)
+  For each action, use `-h` to access help (e.g. `./build.py native -h`)
 - Configure the build by using `config.prop`. A sample `config.prop.sample` is provided.
 
 ## IDE Support
 
 - Kotlin, Java, C++, and C code in the project should be supported in Android Studio out of the box. This repository can be directly opened with Android Studio as a project.
 - For Rust development, see the next section.
-- Before working on any native code, build all native code first with `./build.py binary`, as some generated code is only created during the build process.
+- Before working on any native code, build all native code first with `./build.py native`, as some generated code is only created during the build process.
 
 ### Developing Rust
 

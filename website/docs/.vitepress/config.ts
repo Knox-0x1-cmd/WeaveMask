@@ -72,7 +72,7 @@ export default defineConfig({
           copyright: 'Copyright © 2024-present WeaveMask developers.'
         },
         editLink: {
-          pattern: 'https://github.com/Seyud/WeaveMask/edit/main/website/docs/:path',
+          pattern: 'https://github.com/Seyud/WeaveMask/edit/master/website/docs/:path',
           text: 'Edit this page on GitHub'
         }
       }
@@ -119,7 +119,7 @@ export default defineConfig({
           copyright: 'Copyright © 2024-现在 WeaveMask 开发者。'
         },
         editLink: {
-          pattern: 'https://github.com/Seyud/WeaveMask/edit/main/website/docs/:path',
+          pattern: 'https://github.com/Seyud/WeaveMask/edit/master/website/docs/:path',
           text: '在 GitHub 中编辑本页'
         }
       }

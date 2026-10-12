@@ -44,23 +44,28 @@ class Paths:
                 )
 
         self.ndk = self.sdk / "ndk" / "magisk"
-        self.ndk_build = self.ndk / "ndk-build"
+        self.ndk_build = self.ndk / f"ndk-build{EXE_EXT}"
         self.rust_sysroot = self.ndk / "toolchains" / "rust"
-        self.adb = self.sdk / "platform-tools" / "adb"
+        self.adb = self.sdk / "platform-tools" / f"adb{EXE_EXT}"
         project_root = Path(__file__).resolve().parent.parent
-        self.gradlew = project_root / "app" / "gradlew"
+        if is_windows:
+            self.gradlew = project_root / "app" / "gradlew.bat"
+        else:
+            self.gradlew = project_root / "app" / "gradlew"
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def paths() -> Paths:
     return Paths()
 
 
 def run_once(func):
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if not wrapper.has_run:
             wrapper.has_run = True
             return func(*args, **kwargs)
+        return None
 
     wrapper.has_run = False
     return wrapper
@@ -82,12 +87,21 @@ def _read_config_prop():
 
 @run_once
 def ensure_toolchain():
-    # Verify NDK install
+    # Verify NDK install (if/else, not assert: assert is stripped under python -O)
     try:
-        with open(paths().ndk / "ONDK_VERSION", "r") as ondk_ver:
-            assert ondk_ver.read().strip(" \t\r\n") == ondk_version
-    except:
-        error('Unmatched NDK. Please install/upgrade NDK with "build.py ndk"')
+        with open(paths().ndk / "ONDK_VERSION", "r", encoding="utf-8") as ondk_ver:
+            actual = ondk_ver.read().strip(" \t\r\n")
+    except FileNotFoundError:
+        error(
+            f'NDK not found at {paths().ndk}. Please install/upgrade NDK with "build.py ndk"'
+        )
+    except OSError as e:
+        error(f'Cannot read ONDK_VERSION at {paths().ndk}: {e}')
+    if actual != ondk_version:
+        error(
+            f'Unmatched NDK (expected {ondk_version}, found {actual!r}). '
+            'Please install/upgrade NDK with "build.py ndk"'
+        )
 
     if sccache := shutil.which("sccache"):
         os.environ["RUSTC_WRAPPER"] = sccache
@@ -115,7 +129,9 @@ def ensure_toolchain():
 def ensure_cargo():
     ensure_toolchain()
 
-    os.environ["CARGO_BUILD_RUSTFLAGS"] = f"-Z threads={min(8, cpu_count)}"
+    _threads = f"-Z threads={min(8, cpu_count)}"
+    _prev = os.environ.get("CARGO_BUILD_RUSTFLAGS", "")
+    os.environ["CARGO_BUILD_RUSTFLAGS"] = _threads if not _prev else f"{_prev} {_threads}"
     if shutil.which("rustup"):
         # Go through rustup proxies by default if available
         os.environ["RUSTUP_TOOLCHAIN"] = str(paths().rust_sysroot)
@@ -136,10 +152,15 @@ def ensure_cargo():
     # Cargo calls executables in $RUSTROOT/lib/rustlib/$TRIPLE/bin, we need
     # to make sure the runtime linker also search $RUSTROOT/lib for libraries.
     # This is only required on Unix, as Windows search dlls from PATH.
+    # Prepend (don't overwrite) so existing entries are preserved.
     if os_name == "darwin":
-        os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = str(paths().rust_sysroot / "lib")
+        _lib = str(paths().rust_sysroot / "lib")
+        _prev = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", "")
+        os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = _lib if not _prev else f"{_lib}{os.pathsep}{_prev}"
     elif os_name == "linux":
-        os.environ["LD_LIBRARY_PATH"] = str(paths().rust_sysroot / "lib")
+        _lib = str(paths().rust_sysroot / "lib")
+        _prev = os.environ.get("LD_LIBRARY_PATH", "")
+        os.environ["LD_LIBRARY_PATH"] = _lib if not _prev else f"{_lib}{os.pathsep}{_prev}"
 
 
 @run_once
@@ -156,15 +177,17 @@ def ensure_jdk():
 
     no_jdk = False
     try:
+        # NB: `javac -version` prints to stderr on some JDKs, stdout on
+        # others — capture both so we don't reject a good JDK 21.
         proc = subprocess.run(
             "javac -version",
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
             shell=True,
         )
-        output = proc.stdout.strip().decode("utf-8")
+        output = proc.stdout.strip().decode("utf-8", errors="replace")
         no_jdk = proc.returncode != 0 or not output.startswith("javac 21")
-    except FileNotFoundError:
+    except (FileNotFoundError, OSError):
         no_jdk = True
 
     if no_jdk:
@@ -197,10 +220,16 @@ if is_windows:
 if not sys.version_info >= (3, 8):
     error("Requires Python 3.8+")
 
-cpu_count = multiprocessing.cpu_count()
+try:
+    cpu_count = multiprocessing.cpu_count()
+except NotImplementedError:
+    cpu_count = 4
 
 # When directly invoked, make it a command wrapper
 if __name__ == "__main__":
     ensure_cargo()
     ensure_jdk()
-    subprocess.run(sys.argv[1:])
+    if len(sys.argv) < 2:
+        error(f"Usage: {sys.argv[0]} <command> [args...]")
+    proc = subprocess.run(sys.argv[1:], shell=is_windows)
+    sys.exit(proc.returncode)

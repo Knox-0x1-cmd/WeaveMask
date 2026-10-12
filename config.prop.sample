@@ -1,34 +1,40 @@
 ##########################################################
 # All variables in config.prop are optional
-# Removing or leaving them blank will keep default values
+# Removing them or leaving them blank will keep default values
+# Copy this file to config.prop and uncomment/edit what you need.
 ##########################################################
 
 # The version name of WeaveMask. Default: git HEAD short SHA1
-version=string
+#version=30.7.5
+
+# Integer version code. Default: 1000000 (or magisk.versionCode from app/gradle.properties)
+#versionCode=30750
 
 # Output path. Default: out
-outdir=string
+#outdir=out
 
-# sccache port. Default: 4226 (set if Hyper-V reserves it)
-sccachePort=number
+# sccache server port. Default: 4226 (set if Hyper-V reserves it)
+# Maps to env SCCACHE_SERVER_PORT in scripts/env.py
+#sccachePort=4226
 
 # sccache cache directory. Default: system default
-sccacheDir=path
+# Maps to env SCCACHE_DIR in scripts/env.py
+#sccacheDir=/path/to/cache
 
 # List of ABIs to build, separated with ','
 # Default: armeabi-v7a,x86,arm64-v8a,x86_64
-abiList=[string]
+#abiList=arm64-v8a
 
 #####################################################
 # Signing configs for signing zips and APKs
-# These 4 variables has to be either all set or not
+# These 4 variables have to be either all set or not set
 #####################################################
 
-# Path to keystore file
-keyStore=string
-# Keystore password
-keyStorePass=string
+# Path to keystore file (absolute, or relative to repo root)
+#keyStore=/path/to/key.jks
+# Keystore password (may contain '=')
+#keyStorePass=changeit
 # The desired key alias in the keystore
-keyAlias=string
+#keyAlias=key
 # Password of specified key alias
-keyPass=string
+#keyPass=changeit

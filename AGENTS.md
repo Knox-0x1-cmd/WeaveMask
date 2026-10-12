@@ -41,7 +41,7 @@ CI uses `python build.py -v -c .github/ci.prop all` (arm64-v8a only).
 - `ANDROID_HOME` environment variable pointing to Android SDK
 - `ANDROID_STUDIO` (optional, auto-discovers bundled JDK) or JDK 21 in PATH
 - Windows: enable Developer Mode for symlink support
-- `./build.py ndk` must be run before any native build — it downloads ONDK r30.0 to `$ANDROID_HOME/ndk/magisk`
+- `./build.py ndk` must be run before any native build — it downloads ONDK r30.1 to `$ANDROID_HOME/ndk/magisk`
 - `sccache` or `ccache` in PATH will be auto-detected and used for build caching
 
 ## Architecture

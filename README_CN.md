@@ -1,4 +1,4 @@
-[English](README.md) | 简体中文
+[English](README.MD) | 简体中文
 
 # WeaveMask
 
@@ -24,8 +24,8 @@
 
 ## 相关链接
 
-- [安装教程](https://seyud.github.io/WeaveMask/install.html)
-- [构建与开发](https://seyud.github.io/WeaveMask/build.html)
+- [安装教程](https://seyud.github.io/WeaveMask/guide/installation.html)
+- [构建与开发](https://seyud.github.io/WeaveMask/guide/build.html)
 - [WeaveMask 文档](https://seyud.github.io/WeaveMask/)
 - [Zygisk 模块示例](https://github.com/topjohnwu/zygisk-module-sample)
 

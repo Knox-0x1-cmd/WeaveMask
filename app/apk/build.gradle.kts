@@ -47,7 +47,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
     // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.9.7")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
 
     // Navigation 3 + Miuix NavDisplay
     implementation(libs.navigation3.runtime)

@@ -21,22 +21,22 @@
 - 设置环境变量 `ANDROID_HOME` 为 Android SDK 文件夹。此路径可以在 Android Studio 设置中找到。
 - 设置 JDK：
   - 推荐选项是设置环境变量 `ANDROID_STUDIO` 为你的 Android Studio 安装路径。构建脚本将自动查找并使用捆绑的 JDK。
-  - 你也可以自己设置 JDK 17，但本指南不会涵盖这些说明。
-- 克隆源代码：`git clone --recurse-submodules https://github.com/topjohnwu/Magisk.git`
+  - 你也可以自己设置 JDK 21，但本指南不会涵盖这些说明。
+- 克隆源代码：`git clone --recurse-submodules https://github.com/Seyud/WeaveMask.git`
 - 运行 `./build.py ndk` 让脚本为你下载并安装 NDK
 
 ## 构建
 
 - 要构建所有内容并创建最终的 Magisk APK，运行 `./build.py all`。
 - 你也可以构建特定的子组件；调用 `build.py` 查看你的选项。\
-  对于每个操作，使用 `-h` 访问帮助（例如 `./build.py binary -h`）
+  对于每个操作，使用 `-h` 访问帮助（例如 `./build.py native -h`）
 - 使用 `config.prop` 配置构建。提供了示例 `config.prop.sample`。
 
 ## IDE 支持
 
 - 项目中的 Kotlin、Java、C++ 和 C 代码应该在 Android Studio 中开箱即用。此存储库可以直接作为项目在 Android Studio 中打开。
 - 有关 Rust 开发，请参阅下一节。
-- 在处理任何本机代码之前，先使用 `./build.py binary` 构建所有本机代码，因为某些生成的代码仅在构建过程中创建。
+- 在处理任何本机代码之前，先使用 `./build.py native` 构建所有本机代码，因为某些生成的代码仅在构建过程中创建。
 
 ### 开发 Rust
 

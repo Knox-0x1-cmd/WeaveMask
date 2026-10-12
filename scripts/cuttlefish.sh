@@ -33,10 +33,10 @@ download_cf() {
   local branch=$1
   local device=$2
 
-  if [ -z $branch ]; then
+  if [ -z "$branch" ]; then
     branch='aosp-android-latest-release'
   fi
-  if [ -z $device ]; then
+  if [ -z "$device" ]; then
     device='aosp_cf_x86_64_only_phone'
   fi
   local target="${device}-userdebug"
@@ -47,12 +47,12 @@ download_cf() {
   local host_pkg_url="https://ci.android.com/builds/submitted/${build_id}/${target}/latest/raw/cvd-host_package.tar.gz"
 
   print_title "* Download $target ($build_id) images"
-  curl -L $sys_img_url -o aosp_cf_phone-img.zip
-  curl -LO $host_pkg_url
-  rm -rf $CF_HOME
-  mkdir -p $CF_HOME
-  tar xvf cvd-host_package.tar.gz -C $CF_HOME
-  unzip aosp_cf_phone-img.zip -d $CF_HOME
+  curl -L "$sys_img_url" -o aosp_cf_phone-img.zip
+  curl -LO "$host_pkg_url"
+  rm -rf "$CF_HOME"
+  mkdir -p "$CF_HOME"
+  tar xvf cvd-host_package.tar.gz -C "$CF_HOME"
+  unzip aosp_cf_phone-img.zip -d "$CF_HOME"
   rm -f cvd-host_package.tar.gz aosp_cf_phone-img.zip
 }
 
@@ -64,15 +64,15 @@ test_cf() {
 
   local magisk_args="-init_boot_image=$image"
 
-  timeout $boot_timeout bash -c "run_cvd_bin launch_cvd $cvd_args $magisk_args -resume=false"
+  timeout "$boot_timeout" bash -c "run_cvd_bin launch_cvd $cvd_args $magisk_args -resume=false"
   adb wait-for-device
-  run_setup $apk
+  run_setup "$apk"
 
   adb reboot
   sleep 5
   run_cvd_bin stop_cvd || true
 
-  timeout $boot_timeout bash -c "run_cvd_bin launch_cvd $cvd_args $magisk_args"
+  timeout "$boot_timeout" bash -c "run_cvd_bin launch_cvd $cvd_args $magisk_args"
   adb wait-for-device
   run_tests
 }
@@ -83,16 +83,17 @@ test_main() {
   adb wait-for-device
 
   # Patch images
-  local apks=($(print_apks))
+  local -a apks
+  mapfile -t apks < <(print_apks)
   local images=()
   for apk in "${apks[@]}"; do
-    images+=("magisk-$(basename $apk .apk).img")
+    images+=("magisk-$(basename "$apk" .apk).img")
     ./build.py -v avd_patch --apk "$apk" "$CF_HOME/init_boot.img" "${images[-1]}"
   done
 
   for i in "${!apks[@]}"; do
-    print_title "* Testing $(basename ${apks[i]})"
-    test_cf ${apks[i]} ${images[i]}
+    print_title "* Testing $(basename "${apks[i]}")"
+    test_cf "${apks[i]}" "${images[i]}"
   done
 
   # Cleanup
@@ -100,7 +101,7 @@ test_main() {
   rm -f magisk-*.img
 }
 
-if [ -z $CF_HOME ]; then
+if [ -z "$CF_HOME" ]; then
   print_error "! Environment variable CF_HOME is required"
   exit 1
 fi
@@ -110,7 +111,7 @@ case "$1" in
     setup_env
     ;;
   download )
-    download_cf $2 $3
+    download_cf "$2" "$3"
     ;;
   test )
     trap cleanup EXIT

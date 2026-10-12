@@ -1,5 +1,5 @@
-if [ -z $ANDROID_HOME ]; then
-  export ANDROID_HOME=$ANDROID_SDK_ROOT
+if [ -z "$ANDROID_HOME" ]; then
+  export ANDROID_HOME="$ANDROID_SDK_ROOT"
 fi
 
 # Make sure paths are consistent
@@ -16,7 +16,7 @@ avd="$cli_tools/bin/avdmanager"
 boot_timeout=100
 
 core_count=$(nproc)
-if [ $core_count -gt 8 ]; then
+if [ "$core_count" -gt 8 ]; then
   core_count=8
 fi
 
@@ -48,7 +48,7 @@ run_setup() {
   adb shell 'PATH=$PATH:/debug_ramdisk magisk -v'
 
   # Install the Magisk app
-  adb install -r -g $apk
+  adb install -r -g "$apk"
 
   # Install the test app
   adb install -r -g out/test.apk
@@ -56,14 +56,14 @@ run_setup() {
   local app='io.github.seyud.weave.test/io.github.seyud.weave.test.AppTestRunner'
 
   # Run setup through the test app
-  am_instrument '.Environment#setupEnvironment' $app
+  am_instrument '.Environment#setupEnvironment' "$app"
 }
 
 print_apks() {
   if [ "$#" -eq 0 ]; then
-    find out -maxdepth 1 -type f -name "app-*.apk" -or -name "apk-*.apk"
+    find out -maxdepth 1 -type f \( -name "app-*.apk" -o -name "apk-*.apk" \)
   else
-    echo "$@"
+    printf '%s\n' "$@"
   fi
 }
 
@@ -74,17 +74,17 @@ run_tests() {
   local stub="repackaged.$pkg/$pkg.AppTestRunner"
 
   # Run app tests
-  am_instrument '.MagiskAppTest,.AdditionalTest' $app
+  am_instrument '.MagiskAppTest,.AdditionalTest' "$app"
 
   # Test app hiding
-  am_instrument '.AppMigrationTest#testAppHide' $self
+  am_instrument '.AppMigrationTest#testAppHide' "$self"
 
   # Make sure it still works
-  am_instrument '.MagiskAppTest' $stub
+  am_instrument '.MagiskAppTest' "$stub"
 
   # Test app restore
-  am_instrument '.AppMigrationTest#testAppRestore' $self
+  am_instrument '.AppMigrationTest#testAppRestore' "$self"
 
   # Make sure it still works
-  am_instrument '.MagiskAppTest' $app
+  am_instrument '.MagiskAppTest' "$app"
 }

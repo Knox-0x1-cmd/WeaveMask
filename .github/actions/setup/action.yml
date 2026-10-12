@@ -30,7 +30,7 @@ runs:
       if: ${{ github.event_name != 'pull_request' }}
       with:
         path: .sccache
-        key: sccache-${{ runner.os }}-${{ github.sha }}
+        key: sccache-${{ runner.os }}-${{ hashFiles('native/src/**', 'build.py', 'scripts/env.py', '.github/actions/setup/**') }}
         restore-keys: sccache-${{ runner.os }}-
 
     - name: Restore sccache
@@ -38,20 +38,31 @@ runs:
       if: ${{ github.event_name == 'pull_request' }}
       with:
         path: .sccache
-        key: sccache-${{ runner.os }}-${{ github.sha }}
+        key: sccache-${{ runner.os }}-${{ hashFiles('native/src/**', 'build.py', 'scripts/env.py', '.github/actions/setup/**') }}
         restore-keys: sccache-${{ runner.os }}-
+
+    - name: Export sccache env
+      shell: bash
+      run: |
+        {
+          echo "SCCACHE_DIRECT=false"
+          echo "SCCACHE_DIR=${{ github.workspace }}/.sccache"
+          echo "SCCACHE_CACHE_SIZE=${{ inputs.is-asset-build == 'true' && '2G' || '300M' }}"
+          echo "SCCACHE_IDLE_TIMEOUT=0"
+        } >> "$GITHUB_ENV"
 
     - name: Set up sccache
       shell: bash
       env:
-        SCCACHE_DIRECT: false
-        SCCACHE_DIR: ${{ github.workspace }}/.sccache
-        SCCACHE_CACHE_SIZE: ${{ inputs.is-asset-build == 'true' && '2G' || '300M'  }}
-        SCCACHE_IDLE_TIMEOUT: 0
+        GH_TOKEN: ${{ github.token }}
       run: |
-        bash $GITHUB_ACTION_PATH/sccache.sh
+        bash "$GITHUB_ACTION_PATH/sccache.sh"
+        export SCCACHE_DIRECT=false
+        export SCCACHE_DIR="${{ github.workspace }}/.sccache"
+        export SCCACHE_CACHE_SIZE="${{ inputs.is-asset-build == 'true' && '2G' || '300M' }}"
+        export SCCACHE_IDLE_TIMEOUT=0
         sccache --start-server
-        sccache -z
+        sccache --zero-stats
 
     - name: Show sccache stats
       uses: gacts/run-and-post-run@v1
@@ -71,8 +82,8 @@ runs:
           .gradle/caches
           .gradle/wrapper
           !.gradle/caches/build-cache-*
-        key: gradle-cache-${{ hashFiles('app/gradle/**') }}
-        restore-keys: gradle-cache-
+        key: gradle-cache-${{ runner.os }}-${{ hashFiles('app/gradle/**', 'app/settings.gradle.kts', 'app/build.gradle.kts', 'app/*/build.gradle.kts', 'app/gradle.properties', 'app/build-logic/**') }}
+        restore-keys: gradle-cache-${{ runner.os }}-
         enableCrossOsArchive: true
 
     - name: Restore Gradle dependencies
@@ -83,8 +94,8 @@ runs:
           .gradle/caches
           .gradle/wrapper
           !.gradle/caches/build-cache-*
-        key: gradle-cache-${{ hashFiles('app/gradle/**') }}
-        restore-keys: gradle-cache-
+        key: gradle-cache-${{ runner.os }}-${{ hashFiles('app/gradle/**', 'app/settings.gradle.kts', 'app/build.gradle.kts', 'app/*/build.gradle.kts', 'app/gradle.properties', 'app/build-logic/**') }}
+        restore-keys: gradle-cache-${{ runner.os }}-
         enableCrossOsArchive: true
 
     - name: Cache Gradle build cache
@@ -92,16 +103,17 @@ runs:
       if: ${{ inputs.is-asset-build == 'true' && github.event_name != 'pull_request' }}
       with:
         path: .gradle/caches/build-cache-*
-        key: gradle-build-cache-${{ github.sha }}
-        restore-keys: gradle-build-cache-
+        key: gradle-build-cache-${{ runner.os }}-${{ hashFiles('app/gradle/**', 'app/settings.gradle.kts', 'app/build.gradle.kts', 'app/*/build.gradle.kts', 'app/gradle.properties', 'app/build-logic/**') }}
+        restore-keys: gradle-build-cache-${{ runner.os }}-
+        enableCrossOsArchive: true
 
     - name: Restore Gradle build cache
       uses: actions/cache/restore@v5
       if: ${{ inputs.is-asset-build == 'false' || github.event_name == 'pull_request' }}
       with:
         path: .gradle/caches/build-cache-*
-        key: gradle-build-cache-${{ github.sha }}
-        restore-keys: gradle-build-cache-
+        key: gradle-build-cache-${{ runner.os }}-${{ hashFiles('app/gradle/**', 'app/settings.gradle.kts', 'app/build.gradle.kts', 'app/*/build.gradle.kts', 'app/gradle.properties', 'app/build-logic/**') }}
+        restore-keys: gradle-build-cache-${{ runner.os }}-
         enableCrossOsArchive: true
 
     - name: Set up NDK

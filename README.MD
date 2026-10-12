@@ -24,8 +24,8 @@ A Magisk fork with Miuix UI and enhanced features.
 
 ## Useful Links
 
-- [Installation Instruction](https://seyud.github.io/WeaveMask/install.html)
-- [Building and Development](https://seyud.github.io/WeaveMask/build.html)
+- [Installation Instruction](https://seyud.github.io/WeaveMask/guide/installation.html)
+- [Building and Development](https://seyud.github.io/WeaveMask/guide/build.html)
 - [WeaveMask Documentation](https://seyud.github.io/WeaveMask/)
 - [Zygisk module sample](https://github.com/topjohnwu/zygisk-module-sample)
 

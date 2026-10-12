@@ -12,7 +12,7 @@
 
 ---
 
-下载并安装最新的 [Magisk 应用](https://github.com/topjohnwu/Magisk/releases/latest)。在主屏幕上，你应该看到：
+下载并安装最新的 [Magisk 应用](https://github.com/Seyud/WeaveMask/releases/latest)。在主屏幕上，你应该看到：
 
 <p align="center"><img src="/device_info.png" width="500"/></p>
 
