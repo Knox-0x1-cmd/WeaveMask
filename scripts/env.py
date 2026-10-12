@@ -44,7 +44,10 @@ class Paths:
                 )
 
         self.ndk = self.sdk / "ndk" / "magisk"
-        self.ndk_build = self.ndk / f"ndk-build{EXE_EXT}"
+        # ndk-build on Windows is ndk-build.cmd (not .exe);
+        # rely on PATHEXT via shell=True, so keep extensionless
+        # and let _resolve pick .cmd/.exe if present.
+        self.ndk_build = self._resolve(self.ndk / "ndk-build", ["ndk-build.cmd", "ndk-build.exe", "ndk-build"])
         self.rust_sysroot = self.ndk / "toolchains" / "rust"
         self.adb = self.sdk / "platform-tools" / f"adb{EXE_EXT}"
         project_root = Path(__file__).resolve().parent.parent
@@ -52,6 +55,17 @@ class Paths:
             self.gradlew = project_root / "app" / "gradlew.bat"
         else:
             self.gradlew = project_root / "app" / "gradlew"
+
+    @staticmethod
+    def _resolve(base: Path, candidates: list) -> Path:
+        for name in candidates:
+            p = base.parent / name
+            try:
+                if p.is_file():
+                    return p
+            except OSError:
+                continue
+        return base
 
 
 @functools.lru_cache(maxsize=None)
